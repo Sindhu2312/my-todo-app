@@ -1,9 +1,53 @@
 <template>
   <div class="todo-app">
+    <!-- Animated Background Elements -->
+    <div class="background-animations">
+      <!-- Animated Gradient Background -->
+      <div class="gradient-bg"></div>
+      
+      <!-- Floating Geometric Shapes -->
+      <div class="floating-shape circle shape-1"></div>
+      <div class="floating-shape square shape-2"></div>
+      <div class="floating-shape triangle shape-3"></div>
+      <div class="floating-shape circle shape-4"></div>
+      <div class="floating-shape square shape-5"></div>
+      <div class="floating-shape triangle shape-6"></div>
+      <div class="floating-shape circle shape-7"></div>
+      <div class="floating-shape square shape-8"></div>
+      
+      <!-- Moving Task-related Particles -->
+      <div class="moving-particle particle-1">✓</div>
+      <div class="moving-particle particle-2">📝</div>
+      <div class="moving-particle particle-3">⭐</div>
+      <div class="moving-particle particle-4">🎯</div>
+      <div class="moving-particle particle-5">✨</div>
+      <div class="moving-particle particle-6">📋</div>
+      <div class="moving-particle particle-7">🚀</div>
+      <div class="moving-particle particle-8">💫</div>
+      
+      <!-- Animated Wave Lines -->
+      <svg class="wave-animation" viewBox="0 0 1200 600" preserveAspectRatio="none">
+        <path class="wave-path wave-1" d="M0,300 Q300,200 600,300 T1200,300 V600 H0 Z"></path>
+        <path class="wave-path wave-2" d="M0,350 Q300,250 600,350 T1200,350 V600 H0 Z"></path>
+        <path class="wave-path wave-3" d="M0,400 Q300,300 600,400 T1200,400 V600 H0 Z"></path>
+      </svg>
+      
+      <!-- Orbiting Elements -->
+      <div class="orbit-container orbit-1">
+        <div class="orbit-element">🌟</div>
+      </div>
+      <div class="orbit-container orbit-2">
+        <div class="orbit-element">💼</div>
+      </div>
+      <div class="orbit-container orbit-3">
+        <div class="orbit-element">⚡</div>
+      </div>
+    </div>
+
     <div class="header">
       <h1>
-        <span class="icon">📝</span>
-        <span class="typewriter">Small Steps. Big Wins.</span>
+        <!-- <span class="icon">📝</span> -->
+        <span class="typewriter">📝 Small Steps. Big Wins.</span>
       </h1>
       <div class="stats">
         <span class="stat">Total: {{ tasks.length }}</span>
@@ -786,4 +830,407 @@ export default {
   .bulk-btn {
   padding: 0.75rem 2rem;      /* increased horizontal padding */
   }
+
+/* Animated Background Elements */
+.background-animations {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+/* Animated Gradient Background */
+.gradient-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120%;
+  height: 120%;
+  background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  transform: translate(-10%, -10%);
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating Geometric Shapes */
+.floating-shape {
+  position: absolute;
+  opacity: 0.15;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.circle {
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.square {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+}
+
+.triangle {
+  width: 0;
+  height: 0;
+  background: transparent;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid rgba(255, 255, 255, 0.7);
+}
+
+.shape-1 {
+  width: 80px;
+  height: 80px;
+  top: 10%;
+  left: 10%;
+  animation: float1 8s infinite;
+}
+
+.shape-2 {
+  width: 60px;
+  height: 60px;
+  top: 20%;
+  right: 15%;
+  animation: float2 10s infinite;
+}
+
+.shape-3 {
+  top: 40%;
+  left: 5%;
+  animation: float3 12s infinite;
+}
+
+.shape-4 {
+  width: 100px;
+  height: 100px;
+  top: 60%;
+  right: 10%;
+  animation: float4 9s infinite;
+}
+
+.shape-5 {
+  width: 40px;
+  height: 40px;
+  top: 80%;
+  left: 20%;
+  animation: float5 11s infinite;
+}
+
+.shape-6 {
+  top: 30%;
+  right: 5%;
+  animation: float6 7s infinite;
+}
+
+.shape-7 {
+  width: 120px;
+  height: 120px;
+  top: 70%;
+  right: 25%;
+  animation: float7 13s infinite;
+}
+
+.shape-8 {
+  width: 50px;
+  height: 50px;
+  top: 15%;
+  left: 40%;
+  animation: float8 6s infinite;
+}
+
+/* Floating Animation Keyframes */
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(30px, -20px) rotate(90deg); }
+  50% { transform: translate(-20px, -40px) rotate(180deg); }
+  75% { transform: translate(-40px, 20px) rotate(270deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  33% { transform: translate(-40px, 30px) rotate(120deg) scale(1.2); }
+  66% { transform: translate(25px, -35px) rotate(240deg) scale(0.8); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(60px, -50px) rotate(180deg); }
+}
+
+@keyframes float4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-30px, -25px) scale(1.1); }
+  50% { transform: translate(20px, -50px) scale(0.9); }
+  75% { transform: translate(40px, 10px) scale(1.05); }
+}
+
+@keyframes float5 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(25px, -30px) rotate(72deg); }
+  40% { transform: translate(-15px, -45px) rotate(144deg); }
+  60% { transform: translate(-35px, -10px) rotate(216deg); }
+  80% { transform: translate(10px, 25px) rotate(288deg); }
+}
+
+@keyframes float6 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-45px, 40px) rotate(360deg); }
+}
+
+@keyframes float7 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  33% { transform: translate(20px, -30px) scale(0.8) rotate(120deg); }
+  66% { transform: translate(-25px, 35px) scale(1.1) rotate(240deg); }
+}
+
+@keyframes float8 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(35px, 20px); }
+  50% { transform: translate(-20px, 40px); }
+  75% { transform: translate(-40px, -15px); }
+}
+
+/* Moving Particles */
+.moving-particle {
+  position: absolute;
+  font-size: 24px;
+  opacity: 0.6;
+  pointer-events: none;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.particle-1 {
+  top: 5%;
+  left: -50px;
+  animation: moveAcross1 20s infinite;
+  color: #4ade80;
+}
+
+.particle-2 {
+  top: 25%;
+  right: -50px;
+  animation: moveAcross2 25s infinite;
+  color: #60a5fa;
+}
+
+.particle-3 {
+  top: 45%;
+  left: -50px;
+  animation: moveAcross3 18s infinite;
+  color: #fbbf24;
+}
+
+.particle-4 {
+  top: 65%;
+  right: -50px;
+  animation: moveAcross4 22s infinite;
+  color: #f87171;
+}
+
+.particle-5 {
+  top: 85%;
+  left: -50px;
+  animation: moveAcross5 16s infinite;
+  color: #a78bfa;
+}
+
+.particle-6 {
+  top: 35%;
+  left: -50px;
+  animation: moveAcross6 28s infinite;
+  color: #34d399;
+}
+
+.particle-7 {
+  top: 55%;
+  right: -50px;
+  animation: moveAcross7 24s infinite;
+  color: #fb7185;
+}
+
+.particle-8 {
+  top: 75%;
+  left: -50px;
+  animation: moveAcross8 19s infinite;
+  color: #fcd34d;
+}
+
+@keyframes moveAcross1 {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  25% { transform: translateX(25vw) translateY(-20px) rotate(90deg); }
+  50% { transform: translateX(50vw) translateY(30px) rotate(180deg); }
+  75% { transform: translateX(75vw) translateY(-10px) rotate(270deg); }
+  100% { transform: translateX(calc(100vw + 50px)) translateY(20px) rotate(360deg); }
+}
+
+@keyframes moveAcross2 {
+  0% { transform: translateX(0) translateY(0) scale(1); }
+  30% { transform: translateX(-30vw) translateY(25px) scale(1.2); }
+  60% { transform: translateX(-60vw) translateY(-15px) scale(0.8); }
+  100% { transform: translateX(calc(-100vw - 50px)) translateY(35px) scale(1); }
+}
+
+@keyframes moveAcross3 {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  100% { transform: translateX(calc(100vw + 50px)) translateY(-40px) rotate(720deg); }
+}
+
+@keyframes moveAcross4 {
+  0% { transform: translateX(0) translateY(0) scale(1); }
+  50% { transform: translateX(-50vw) translateY(-30px) scale(1.5); }
+  100% { transform: translateX(calc(-100vw - 50px)) translateY(20px) scale(1); }
+}
+
+@keyframes moveAcross5 {
+  0% { transform: translateX(0) translateY(0); }
+  20% { transform: translateX(20vw) translateY(-25px); }
+  40% { transform: translateX(40vw) translateY(15px); }
+  60% { transform: translateX(60vw) translateY(-35px); }
+  80% { transform: translateX(80vw) translateY(25px); }
+  100% { transform: translateX(calc(100vw + 50px)) translateY(-15px); }
+}
+
+@keyframes moveAcross6 {
+  0% { transform: translateX(0) translateY(0) rotate(0deg) scale(1); }
+  100% { transform: translateX(calc(100vw + 50px)) translateY(45px) rotate(-360deg) scale(1.3); }
+}
+
+@keyframes moveAcross7 {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-25vw) translateY(-20px); }
+  50% { transform: translateX(-50vw) translateY(40px); }
+  75% { transform: translateX(-75vw) translateY(-30px); }
+  100% { transform: translateX(calc(-100vw - 50px)) translateY(15px); }
+}
+
+@keyframes moveAcross8 {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  100% { transform: translateX(calc(100vw + 50px)) translateY(-25px) rotate(540deg); }
+}
+
+/* Wave Animation */
+.wave-animation {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.1;
+}
+
+.wave-path {
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+.wave-1 {
+  fill: rgba(255, 255, 255, 0.3);
+  animation: waveMove1 8s infinite;
+}
+
+.wave-2 {
+  fill: rgba(255, 255, 255, 0.2);
+  animation: waveMove2 12s infinite;
+}
+
+.wave-3 {
+  fill: rgba(255, 255, 255, 0.1);
+  animation: waveMove3 10s infinite;
+}
+
+@keyframes waveMove1 {
+  0%, 100% { d: path("M0,300 Q300,200 600,300 T1200,300 V600 H0 Z"); }
+  50% { d: path("M0,250 Q300,350 600,250 T1200,250 V600 H0 Z"); }
+}
+
+@keyframes waveMove2 {
+  0%, 100% { d: path("M0,350 Q300,250 600,350 T1200,350 V600 H0 Z"); }
+  50% { d: path("M0,400 Q300,300 600,400 T1200,400 V600 H0 Z"); }
+}
+
+@keyframes waveMove3 {
+  0%, 100% { d: path("M0,400 Q300,300 600,400 T1200,400 V600 H0 Z"); }
+  50% { d: path("M0,450 Q300,350 600,450 T1200,450 V600 H0 Z"); }
+}
+
+/* Orbiting Elements */
+.orbit-container {
+  position: absolute;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.orbit-1 {
+  width: 200px;
+  height: 200px;
+  top: 20%;
+  left: 10%;
+  animation: rotate 20s infinite;
+}
+
+.orbit-2 {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  right: 5%;
+  animation: rotate 30s infinite reverse;
+}
+
+.orbit-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 20%;
+  left: 30%;
+  animation: rotate 15s infinite;
+}
+
+.orbit-element {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  opacity: 0.7;
+  animation: counterRotate 20s linear infinite;
+}
+
+.orbit-2 .orbit-element {
+  animation: counterRotate 30s linear infinite reverse;
+}
+
+.orbit-3 .orbit-element {
+  animation: counterRotate 15s linear infinite;
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes counterRotate {
+  0% { transform: translateX(-50%) rotate(0deg); }
+  100% { transform: translateX(-50%) rotate(-360deg); }
+}
+
+/* Make sure todo-app has proper positioning */
+.todo-app {
+  position: relative;
+  z-index: 1;
+}
 </style>

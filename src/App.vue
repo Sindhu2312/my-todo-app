@@ -2,7 +2,7 @@
   <div id="app">
     <nav class="navbar">
       <div class="nav-container">
-        <router-link to="/home" class="nav-brand">📝 To-Do App</router-link>
+        <router-link to="/home" class="nav-brand">🎯 Doify</router-link>
         <div class="nav-links">
           <router-link to="/home" class="nav-link">Tasks</router-link>
           <router-link to="/about" class="nav-link">About</router-link>
