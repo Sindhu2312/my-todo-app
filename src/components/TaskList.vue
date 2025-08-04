@@ -70,6 +70,21 @@
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
+        <div class="datetime-container">
+          <input
+            v-model="newTaskDueDate"
+            type="date"
+            class="date-input"
+            :min="minDate"
+            placeholder="Due date"
+          />
+          <input
+            v-model="newTaskDueTime"
+            type="time"
+            class="time-input"
+            placeholder="Due time"
+          />
+        </div>
         <button type="submit" class="add-btn" :disabled="!newTask.trim()">
           Add Task
         </button>
@@ -95,7 +110,7 @@
         <li 
           v-for="task in filteredTasks" 
           :key="task.id"
-          :class="['task-item', `priority-${task.priority}`, { completed: task.done }]"
+          :class="['task-item', `priority-${task.priority}`, { completed: task.done, expired: isTaskExpired(task) && !task.done }]"
         >
           <div class="task-content">
             <input 
@@ -105,17 +120,48 @@
               @change="updateTask(task)"
             />
             <div class="task-text-container" @dblclick="startEdit(task)">
-              <input
-                v-if="editingTask === task.id"
-                v-model="editText"
-                @blur="saveEdit(task)"
-                @keyup.enter="saveEdit(task)"
-                @keyup.esc="cancelEdit"
-                class="edit-input"
-                ref="editInput"
-              />
-              <span v-else :class="['task-text', { done: task.done }]">
+              <div v-if="editingTask === task.id" class="edit-container">
+                <input
+                  v-model="editText"
+                  @keyup.enter="saveEdit(task)"
+                  @keyup.esc="cancelEdit"
+                  @blur="saveEdit(task)"
+                  class="edit-input"
+                  ref="editInput"
+                  placeholder="Edit task description..."
+                />
+                <div class="edit-datetime-section">
+                  <label class="edit-datetime-label">Due Date & Time:</label>
+                  <div class="edit-datetime-container">
+                    <input
+                      v-model="editDueDate"
+                      type="date"
+                      class="edit-date-input"
+                      :min="minDate"
+                      placeholder="Due date"
+                      title="Edit due date"
+                      @blur="saveEdit(task)"
+                    />
+                    <input
+                      v-model="editDueTime"
+                      type="time"
+                      class="edit-time-input"
+                      placeholder="Due time"
+                      title="Edit due time"
+                      @blur="saveEdit(task)"
+                    />
+                  </div>
+                </div>
+                <!-- edit-actions removed; inputs now auto-save on blur/enter -->
+              </div>
+              <span v-else :class="['task-text', { done: task.done, expired: isTaskExpired(task) && !task.done }]">
                 {{ task.text }}
+                <span v-if="isTaskExpired(task) && !task.done" class="expired-inline">
+                  ⚠️ Expired {{ formatExpiredDate(task.dueDateTime) }}
+                </span>
+                <span v-if="task.dueDateTime" class="due-date-display">
+                  📅 {{ formatDueDate(task.dueDateTime) }}
+                </span>
               </span>
               <span :class="['priority-badge', `priority-${task.priority}`]">
                 {{ task.priority }}
@@ -180,8 +226,13 @@ export default {
       currentFilter: 'all',
       editingTask: null,
       editText: '',
+      editDueDate: '',
+      editDueTime: '',
       showError: false,
       nextId: 1,
+      newTaskDueDate: '',
+      newTaskDueTime: '',
+      minDate: new Date().toISOString().split('T')[0],
       filters: [
         { label: 'All', value: 'all' },
         { label: 'Active', value: 'active' },
@@ -210,6 +261,13 @@ export default {
   created() {
     this.loadTasks();
   },
+  mounted() {
+    this.checkExpiredTasks();
+    this.expiredInterval = setInterval(this.checkExpiredTasks, 60000); // check every minute
+  },
+  beforeUnmount() {
+    clearInterval(this.expiredInterval);
+  },
   watch: {
     tasks: {
       handler() {
@@ -230,17 +288,31 @@ export default {
         return;
       }
 
+      // Combine date and time for dueDateTime
+      let dueDateTime = null;
+      if (this.newTaskDueDate) {
+        dueDateTime = this.newTaskDueDate;
+        if (this.newTaskDueTime) {
+          dueDateTime += 'T' + this.newTaskDueTime;
+        } else {
+          dueDateTime += 'T23:59'; // default to end of day
+        }
+      }
+
       const newTask = {
         id: this.nextId++,
         text,
         done: false,
         priority: this.newTaskPriority,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        dueDateTime
       };
 
       this.tasks.unshift(newTask); // Add to beginning for better UX
       this.newTask = '';
       this.newTaskPriority = 'medium';
+      this.newTaskDueDate = '';
+      this.newTaskDueTime = '';
       this.showError = false;
     },
 
@@ -252,28 +324,83 @@ export default {
 
     startEdit(task) {
       if (task.done) return; // Don't edit completed tasks
+      // Toggle edit mode: if already editing this task, close it
+      if (this.editingTask === task.id) {
+        this.cancelEdit();
+        return;
+      }
+      // Only allow one edit at a time
+      if (this.editingTask !== null && this.editingTask !== task.id) {
+        this.cancelEdit();
+      }
       this.editingTask = task.id;
       this.editText = task.text;
+      // Parse existing date/time if available
+      if (task.dueDateTime) {
+        try {
+          const dateTime = new Date(task.dueDateTime);
+          this.editDueDate = dateTime.toISOString().split('T')[0];
+          const hours = dateTime.getHours().toString().padStart(2, '0');
+          const minutes = dateTime.getMinutes().toString().padStart(2, '0');
+          this.editDueTime = `${hours}:${minutes}`;
+        } catch (error) {
+          console.error('Error parsing date:', error);
+          this.editDueDate = '';
+          this.editDueTime = '';
+        }
+      } else {
+        this.editDueDate = '';
+        this.editDueTime = '';
+      }
       this.$nextTick(() => {
         const editInput = this.$refs.editInput;
-        if (editInput && editInput.length) {
+        if (editInput && editInput.focus) {
+          editInput.focus();
+          editInput.select && editInput.select();
+        } else if (editInput && editInput.length) {
           editInput[0].focus();
-          editInput[0].select();
+          editInput[0].select && editInput[0].select();
         }
       });
     },
 
     saveEdit(task) {
       const text = this.editText.trim();
-      if (text && text !== task.text) {
+      if (text) {
         task.text = text;
       }
+      // Update due date/time
+      let dueDateTime = null;
+      if (this.editDueDate) {
+        dueDateTime = this.editDueDate;
+        if (this.editDueTime) {
+          dueDateTime += 'T' + this.editDueTime;
+        } else {
+          dueDateTime += 'T23:59'; // default to end of day
+        }
+      }
+      task.dueDateTime = dueDateTime;
+      // Force reactivity update
+      const taskIndex = this.tasks.findIndex(t => t.id === task.id);
+      if (taskIndex !== -1) {
+        this.$set(this.tasks, taskIndex, { ...task });
+      }
+      // Once saved, cancel edit to reset state
       this.cancelEdit();
+      // Blur date/time pickers to close dropdowns
+      this.$nextTick(() => {
+        const dateInput = document.querySelector('.edit-date-input');
+        const timeInput = document.querySelector('.edit-time-input');
+        if (dateInput) dateInput.blur();
+        if (timeInput) timeInput.blur();
+      });
     },
 
     cancelEdit() {
       this.editingTask = null;
       this.editText = '';
+      this.editDueDate = '';
+      this.editDueTime = '';
     },
 
     updateTask(task) {
@@ -330,7 +457,8 @@ export default {
           text: task.text || '',
           done: task.done || false,
           priority: task.priority || 'medium',
-          createdAt: task.createdAt || new Date().toISOString()
+          createdAt: task.createdAt || new Date().toISOString(),
+          dueDateTime: task.dueDateTime || null
         }));
       } catch (error) {
         console.error('Error loading tasks:', error);
@@ -346,7 +474,64 @@ export default {
       } catch (error) {
         console.error('Error saving tasks:', error);
       }
-    }
+    },
+
+    isTaskExpired(task) {
+      if (!task.dueDateTime) return false;
+      return !task.done && new Date(task.dueDateTime) < new Date();
+    },
+    checkExpiredTasks() {
+      // Just trigger reactivity to update visual indicators
+      // No intrusive alerts - users can see expired tasks with visual warnings
+      this.tasks = [...this.tasks];
+    },
+
+    formatDueDate(dueDateTime) {
+      if (!dueDateTime) return '';
+      const date = new Date(dueDateTime);
+      const now = new Date();
+      
+      // Check if it's today
+      if (date.toDateString() === now.toDateString()) {
+        return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      }
+      
+      // Check if it's tomorrow
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      if (date.toDateString() === tomorrow.toDateString()) {
+        return `Tomorrow at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      }
+      
+      // Check if it's yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      }
+      
+      return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    },
+
+    formatExpiredDate(dueDateTime) {
+      if (!dueDateTime) return '';
+      const date = new Date(dueDateTime);
+      const now = new Date();
+      const diffTime = now - date;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      const diffMinutes = Math.floor(diffTime / (1000 * 60));
+      
+      if (diffDays > 0) {
+        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      } else if (diffHours > 0) {
+        return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      } else if (diffMinutes > 0) {
+        return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+      } else {
+        return 'Just now';
+      }
+    },
   }
 };
 </script>
@@ -473,6 +658,46 @@ export default {
   background-size: 0.65em;
 }
 
+.datetime-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: #f8fafc;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.datetime-container:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.date-input, .time-input {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.date-input:focus, .time-input:focus {
+  outline: none;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.date-input {
+  min-width: 130px;
+}
+
+.time-input {
+  min-width: 80px;
+}
+
 .add-btn {
   background: #667eea;
   color: white;
@@ -567,6 +792,15 @@ export default {
   opacity: 0.7;
 }
 
+.task-item.expired {
+  background: #fef2f2;
+  border-left: 4px solid #f56565;
+}
+
+.task-item.expired:hover {
+  background: #fed7d7;
+}
+
 .priority-high {
   border-left: 4px solid #e53e3e;
 }
@@ -641,6 +875,152 @@ export default {
 .priority-badge.priority-low {
   background: #c6f6d5;
   color: #2f855a;
+}
+
+.task-text.expired {
+  color: #e53e3e;
+  font-weight: 500;
+}
+
+.due-date-display {
+  display: inline-block;
+  margin-left: 0.75rem;
+  font-size: 0.75rem;
+  color: #718096;
+  background: #edf2f7;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.expired-inline {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: #c53030;
+  background: #fed7d7;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.edit-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+
+.edit-datetime-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-datetime-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.25rem;
+}
+
+.edit-datetime-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: #f8fafc;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.edit-date-input, .edit-time-input {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-date-input:focus, .edit-time-input:focus {
+  outline: none;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.edit-date-input {
+  min-width: 130px;
+}
+
+.edit-time-input {
+  min-width: 80px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.save-btn, .cancel-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-btn {
+  background: #38a169;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #2f855a;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.cancel-btn:hover {
+  background: #cbd5e0;
+}
+
+.expired-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+  background: #fed7d7;
+  color: #c53030;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.05);
+  }
 }
 
 .task-actions {
@@ -764,6 +1144,19 @@ export default {
   .priority-select, .add-btn {
     width: 100%;
   }
+
+  .datetime-container {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .date-input, .time-input {
+    width: 100%;
+    min-width: unset;
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
   
   .task-item {
     padding: 1rem;
@@ -782,6 +1175,31 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .edit-datetime-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .edit-date-input, .edit-time-input {
+    width: 100%;
+    min-width: unset;
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .expired-inline {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .due-date-display {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.25rem;
   }
   
   .task-actions {
